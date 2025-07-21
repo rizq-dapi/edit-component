@@ -1605,6 +1605,7 @@ function applyChanges() {
                 userAgent: navigator.userAgent,
                 sessionId: 'edit-session-' + Date.now()
             },
+            imageDataBase64: image,
             secureToken: window.EDIT_TOKEN || ''
         };
 
