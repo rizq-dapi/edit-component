@@ -1608,6 +1608,8 @@ function applyChanges() {
             secureToken: window.EDIT_TOKEN || ''
         };
 
+        console.log('editData', editData);
+
         const baseUrl = window.EDIT_BASE_URL || 'http://localhost:8080';
 
         fetch(baseUrl + '/sandbox/get-by-task', {
