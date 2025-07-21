@@ -1575,7 +1575,7 @@ function applyChanges() {
         similar_elements = [];
         element_id = null;
 
-        let image = '';
+        let image = {};
         // check if there is any image doms within the children of the element
         if(document.getElementById(_element_id).querySelector('#tasker-image-preview-replace')) {
             image = {
@@ -1605,9 +1605,12 @@ function applyChanges() {
                 userAgent: navigator.userAgent,
                 sessionId: 'edit-session-' + Date.now()
             },
-            image: image,
             secureToken: window.EDIT_TOKEN || ''
         };
+
+        if (Object.keys(image).length > 0 && image.type === 'image' && image.value) {
+            editData.image = image;
+        }
 
         console.log('editData', editData);
 
