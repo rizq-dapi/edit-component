@@ -1586,18 +1586,53 @@ function applyChanges() {
             }
         }
 
-        // call server here
+        const el = document.getElementById(_element_id);
+        const editData = {
+            taskUuid: window.TASK_UUID || '',
+            appId: window.APP_ID || 'unknown',
+            elementId: _element_id,
+            editRequest: ai_prompt && ai_prompt.trim() !== '' ? ai_prompt : changes.join(', '),
+            pageUrl: window.location.href,
+            pagePath: window.location.pathname,
+            elementContext: {
+                tagName: el ? el.tagName : '',
+                className: el ? el.className : '',
+                textContent: el ? (el.textContent || '').substring(0, 100) : '',
+                parentElement: el && el.parentElement ? el.parentElement.tagName : ''
+            },
+            metadata: {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                sessionId: 'edit-session-' + Date.now()
+            },
+            secureToken: window.EDIT_TOKEN || ''
+        };
 
-        console.log('changes', changes);
-        console.log('ai_prompt', ai_prompt);
-        console.log('similar_elements', similar_elements);
-        console.log('image', image);
+        const baseUrl = window.EDIT_BASE_URL || 'http://localhost:8080';
 
-        // REMOVE
-        setTimeout(() => {
+        fetch(baseUrl + '/sandbox/get-by-task', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (window.EDIT_TOKEN || '')
+            },
+            body: JSON.stringify(editData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error('HTTP ' + response.status + ': ' + text);
+                });
+            }
+            return response.json();
+        })
+        .then(() => {
             changesComplete(_element_id, _similar_elements);
-        }, 4000);
-
+        })
+        .catch(err => {
+            console.error('Edit request failed:', err);
+            changesComplete(_element_id, _similar_elements);
+        });
 
         changes = [];
 
