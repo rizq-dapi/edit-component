@@ -359,6 +359,17 @@ function editElement(_element_id) {
 
 
 
+    addEventListenersForInputs();
+
+
+
+}
+
+
+function addEventListenersForInputs() {
+
+
+
     // get the color of the element and if you cant find it get the inherited color and set the .clr-field element color to the same color
     let color = document.getElementById(element_id).style.color;
     if(!color) {
@@ -371,17 +382,6 @@ function editElement(_element_id) {
 
     // change the bg of input to the color of the color picker
     document.getElementById('element-text-bg').style.backgroundColor = bg_color;
-
-
-
-    addEventListenersForInputs();
-
-
-
-}
-
-
-function addEventListenersForInputs() {
 
 
 
