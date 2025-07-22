@@ -1645,6 +1645,7 @@ function applyChanges() {
             taskUuid: window.TASK_UUID || '',
             appId: window.APP_ID || 'unknown',
             elementId: _element_id,
+            styleChanges: changes.length ? changes.join(', ') : null,
             editRequest: ai_prompt && ai_prompt.trim() !== '' ? ai_prompt : changes.join(', '),
             pageUrl: window.location.href,
             pagePath: window.location.pathname,
@@ -1704,10 +1705,80 @@ function applyChanges() {
 
 
 function deleteElement() {
+    // Remove currently selected element and clean up overlays/state
     console.log('FUNCTION deleteElement');
 
-    // call server here
-    
+    if (!element_id) return;
+
+    // Remove the primary element from the DOM
+    const el = document.getElementById(element_id);
+    if (el) {
+        el.remove();
+    }
+
+    (function sendDelete() {
+        try {
+            const _elementId = element_id;
+            const TASK_UUID = window.TASK_UUID || '';
+            const EDIT_TOKEN = window.EDIT_TOKEN || '';
+            const EDIT_BASE_URL = window.EDIT_BASE_URL || 'http://localhost:8080';
+
+            if (!TASK_UUID || !_elementId || !EDIT_TOKEN) {
+                console.warn('deleteElement: missing credentials or element id, skipping backend delete');
+                return;
+            }
+
+            const editData = {
+                taskUuid: TASK_UUID,
+                appId: window.APP_ID || 'unknown',
+                elementId: _elementId,
+                deleteElement: true,
+                pageUrl: window.location.href,
+                pagePath: window.location.pathname,
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    sessionId: 'delete-session-' + Date.now()
+                },
+                secureToken: EDIT_TOKEN
+            };
+
+            fetch(EDIT_BASE_URL + '/sandbox/get-by-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + EDIT_TOKEN
+                },
+                body: JSON.stringify(editData)
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(t => { throw new Error('HTTP ' + res.status + ': ' + t); });
+                }
+                return res.json();
+            })
+            .then(() => console.log('deleteElement: backend deletion recorded'))
+            .catch(err => console.error('deleteElement: backend deletion failed', err));
+        } catch (err) {
+            console.error('deleteElement: unexpected error', err);
+        }
+    })();
+
+    // Remove highlight classes from similar elements (if any were selected)
+    for (let i = 0; i < similar_elements.length; i++) {
+        if (similar_elements[i]) {
+            similar_elements[i].classList.remove('selected-highlight');
+        }
+    }
+    similar_elements = [];
+
+    // Remove the tasker overlay, if it exists
+    const tasker = document.querySelector('.tasker_container');
+    if (tasker) tasker.remove();
+
+    // Reset global state
+    element_id = null;
+    changes = [];
 }
 
 function changesComplete(_element_id, _similar_elements) {
