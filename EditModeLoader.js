@@ -43,7 +43,8 @@ if (!params.get('edit') || params.get('edit') !== 'true') {
 
 
         // if the element is a child of .tasker_container return;
-        if(el.closest('.tasker_container') || el.closest('.clr-picker') || el.closest('.do-not-edit')) {
+        // if element == element_id return
+        if(el.closest('.tasker_container') || el.closest('.clr-picker') || el.closest('.do-not-edit') || el.id === element_id) {
             return;
         }
 
@@ -115,7 +116,43 @@ if (!params.get('edit') || params.get('edit') !== 'true') {
             -moz-box-shadow: 0px 0px 10px 2px rgba(0,73,229,0.69) !important;
             box-shadow: 0px 0px 10px 2px rgba(0,73,229,0.69) !important;
             box-sizing: border-box;
-        }   
+        }
+
+
+        .animating-highlight {
+            position: relative;
+            outline: 0.5px solid rgba(0, 73, 229, 1);
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .animating-highlight::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid rgba(0, 73, 229, 0.5);
+            border-radius: 4px;
+            pointer-events: none;
+            animation: borderGlow 1.5s infinite ease-in-out;
+        }
+
+        @keyframes borderGlow {
+        0% {
+            box-shadow: 0 0 0px 0 rgba(0, 73, 229, 0);
+            border-color: rgba(0, 73, 229, 0.2);
+        }
+        50% {
+            box-shadow: 0 0 12px 4px rgba(0, 73, 229, 0.7);
+            border-color: rgba(0, 73, 229, 0.7);
+        }
+        100% {
+            box-shadow: 0 0 0px 0 rgba(0, 73, 229, 0);
+            border-color: rgba(0, 73, 229, 0.2);
+        }
+        }
             
 
         @keyframes shimmer {
@@ -598,6 +635,12 @@ function updateImage(type) {
         img.style.objectFit = 'contain';
         img.style.width = '100%';
         img.style.height = '100%';
+        
+
+        // update width input to 100% tasker-image-preview-width
+        document.getElementById('tasker-image-preview-width').value = '100%';
+        // update height input to 100% tasker-image-preview-height
+        document.getElementById('tasker-image-preview-height').value = '100%';
 
     }
 }
@@ -733,9 +776,9 @@ function pushChange(change) {
     }
 
     if(changes.length > 0) {
-        document.querySelector('.container-approve').style.display = 'flex';
+        document.querySelector('.container-approve-inner-approve').style.opacity = '1';
     } else {
-        document.querySelector('.container-approve').style.display = 'none';
+        document.querySelector('.container-approve-inner-approve').style.opacity = '0.5';
     }
 }
 
@@ -1016,11 +1059,12 @@ function injectHtml() {
 
 
     .container-approve {
-        display: none;
+        display: flex;
         width: 100%;
         justify-content: flex-end;
         align-items: center;
         gap: 8px;
+        opacity: 1;
     }
     .container-approve-inner {
         display: flex;
@@ -1034,6 +1078,7 @@ function injectHtml() {
         border-radius: 8px;
         color: white;
         cursor: pointer;
+        opacity: 0.5;
     }
     .container-approve-inner-approve:hover {
         background: #009966;
@@ -1286,15 +1331,15 @@ function injectHtml() {
             <div class="container-options">
                 <div class="container-style">
                     <div class="container-style-inner">
-                        <div id="element-align-center" class="container-style-inner-button">
-                            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3.16669 4.5H13.8333M5.83335 8.5H11.1667M4.50002 12.5H12.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>    
-                        </div>
                         <div id="element-align-left" class="container-style-inner-button">
                             <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3.16669 4.5H13.8333M3.16669 8.5H9.83335M3.16669 12.5H12.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>                        
+                        </div>
+                        <div id="element-align-center" class="container-style-inner-button">
+                            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3.16669 4.5H13.8333M5.83335 8.5H11.1667M4.50002 12.5H12.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>    
                         </div>
                         <div id="element-align-right" class="container-style-inner-button">
                             <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1504,11 +1549,17 @@ function loadingChanges() {
     document.getElementById(element_id).classList.add('shimmer-wrapper');
     document.getElementById(element_id).classList.add('shimmer-effect');
 
+    // add class animating-highlight to the element
+    document.getElementById(element_id).classList.add('animating-highlight');
+
+    // add class shimmer-wrapper to similar_elements
     // update style of similar elements
     for(let i = 0; i < similar_elements.length; i++) {
         similar_elements[i].classList.add('shimmer-wrapper');
         similar_elements[i].classList.add('shimmer-effect');
+        similar_elements[i].classList.add('animating-highlight');
     }
+    
     
 }
 
@@ -1561,13 +1612,16 @@ function applyChanges() {
         // delete tasker_container
         document.querySelector('.tasker_container').remove();
 
-        // remove class selected-highlight from the element
+        // // remove class selected-highlight from the element
         document.getElementById(element_id).classList.remove('selected-highlight');
 
-        // remove class selected-highlight from similar_elements
+        // // remove class selected-highlight from similar_elements
         for(let i = 0; i < similar_elements.length; i++) {
             similar_elements[i].classList.remove('selected-highlight');
         }
+
+
+        
 
         let _similar_elements = similar_elements;
         let _element_id = element_id;
@@ -1637,7 +1691,9 @@ function applyChanges() {
         })
         .catch(err => {
             console.error('Edit request failed:', err);
-            changesComplete(_element_id, _similar_elements);
+            setTimeout(() => {
+                changesComplete(_element_id, _similar_elements);
+            }, 3000);
         });
 
         changes = [];
@@ -1667,5 +1723,12 @@ function changesComplete(_element_id, _similar_elements) {
         _similar_elements[i].classList.remove('shimmer-effect');
     }
 
+    // remove class selected-highlight from the element
+    document.getElementById(_element_id).classList.remove('animating-highlight');
+
+    // remove class selected-highlight from similar_elements
+    for(let i = 0; i < _similar_elements.length; i++) {
+        _similar_elements[i].classList.remove('animating-highlight');
+    }
 
 }
