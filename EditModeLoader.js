@@ -1655,8 +1655,8 @@ function applyChanges() {
         // check if there is any image doms within the children of the element
         if(document.getElementById(_element_id).querySelector('#tasker-image-preview-replace')) {
 
-            let width = document.getElementById(_element_id).querySelector('#tasker-image-preview-width').value;
-            let height = document.getElementById(_element_id).querySelector('#tasker-image-preview-height').value;
+            let width = document.getElementById(_element_id).value;
+            let height = document.getElementById(_element_id).value;
 
 
             if(!isNaN(width)) {
