@@ -782,45 +782,67 @@ function pushChange(change) {
     }
 }
 
-function positionTaskerContainer(_element_id) {
-    console.log('FUNCTION positionTaskerContainer', _element_id);
-    
-    const anchorEl = document.getElementById(_element_id);
+function positionTaskerContainer(id) {
+    const anchorEl  = document.getElementById(id);
     const container = document.querySelector('.tasker_container');
-  
     if (!anchorEl || !container) return;
   
-    const anchorRect = anchorEl.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-  
     const spacing = 16;
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
   
-    // Horizontal center
-    let left = anchorRect.left + (anchorRect.width / 2) - (containerRect.width / 2);
+    // Reset any previous constraints before measuring
+    Object.assign(container.style, {
+      maxWidth: '', maxHeight: '', overflow: '', position: 'absolute'
+    });
   
-    // Clamp horizontally to the screen
-    left = Math.max(0, Math.min(left, viewportWidth - containerRect.width));
+    const a = anchorEl.getBoundingClientRect();
+    let   c = container.getBoundingClientRect();
   
-    // Decide vertical placement: below or above
+    // 1) Constrain size so it can always fit
+    const maxW = vw - spacing * 2;
+    const maxH = vh - spacing * 2;
+    if (c.width  > maxW)  container.style.maxWidth  = `${maxW}px`;
+    if (c.height > maxH) { 
+      container.style.maxHeight = `${maxH}px`;
+      container.style.overflow  = 'auto';
+    }
+    c = container.getBoundingClientRect(); // re-measure
+  
+    // Helper to clamp
+    const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
+  
+    // 2) Choose a preferred spot (below/above), otherwise fallback
+    const spaceBelow = vh - a.bottom - spacing;
+    const spaceAbove = a.top - spacing;
     let top;
-    const spaceBelow = viewportHeight - anchorRect.bottom;
-    const spaceAbove = anchorRect.top;
   
-    if (spaceBelow >= containerRect.height + spacing) {
-      top = anchorRect.bottom + spacing;
-    } else if (spaceAbove >= containerRect.height + spacing) {
-      top = anchorRect.top - containerRect.height - spacing;
+    if (spaceBelow >= c.height || spaceBelow >= spaceAbove) {
+      // Prefer below
+      top = a.bottom + spacing;
     } else {
-      top = anchorRect.bottom + spacing;
+      // Prefer above
+      top = a.top - c.height - spacing;
     }
   
-    // Apply scroll offset fix
-    container.style.position = 'absolute';
+    // Horizontal center by default
+    let left = a.left + (a.width - c.width) / 2;
+  
+    // 3) If the anchor is bigger than the viewport, just center the container
+    const anchorTooBig = (a.width >= vw || a.height >= vh);
+    if (anchorTooBig) {
+      top  = (vh - c.height) / 2;
+      left = (vw - c.width)  / 2;
+    }
+  
+    // 4) Final clamps to keep it 100% on screen
+    top  = clamp(top,  spacing, vh - c.height - spacing);
+    left = clamp(left, spacing, vw - c.width  - spacing);
+  
+    // Apply with scroll offsets
     container.style.left = `${left + window.scrollX}px`;
-    container.style.top = `${top + window.scrollY}px`;
-  }
+    container.style.top  = `${top  + window.scrollY}px`;
+}
   
 
 
@@ -1632,11 +1654,25 @@ function applyChanges() {
         let image = {};
         // check if there is any image doms within the children of the element
         if(document.getElementById(_element_id).querySelector('#tasker-image-preview-replace')) {
+
+            let width = document.getElementById(_element_id).querySelector('#tasker-image-preview-width').value;
+            let height = document.getElementById(_element_id).querySelector('#tasker-image-preview-height').value;
+
+
+            if(!isNaN(width)) {
+                width = width + 'px';
+            }
+
+            if(!isNaN(height)) {
+                height = height + 'px';
+            }
+
             image = {
                 type: 'image',
                 value: document.getElementById(_element_id).querySelector('#tasker-image-preview-replace').src,
-                width: document.getElementById(_element_id).querySelector('#tasker-image-preview-replace').style.width,
-                height: document.getElementById(_element_id).querySelector('#tasker-image-preview-replace').style.height
+                width: width,
+                height: height,
+                style: "object-fit: contain;"
             }
         }
 
