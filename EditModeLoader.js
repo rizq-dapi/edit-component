@@ -7,17 +7,63 @@ let initial_html = null;
 
 let similar_elements = [];
 
+let initial_html_image = '';
 
 
+let hover_highlight = null;
 
-
+let uploadedImageFile = null;
 
 const params = new URLSearchParams(window.location.search);
 
-if (!params.get('edit') || params.get('edit') !== 'true') {
+let editEnabled = false;
 
-} else {
+function enableEdit() {
+    editEnabled = true;
+    document.getElementById('tasker-edit-button').style.display = 'none';
+    document.getElementById('tasker-done-button').style.display = 'flex';
+    document.getElementsByClassName('tasker-bottom-bar')[0].classList.add('tasker-done-button-highlighted');
+}
 
+function disableEdit() {
+    editEnabled = false;
+    document.getElementById('tasker-edit-button').style.display = 'flex';
+    document.getElementById('tasker-done-button').style.display = 'none';
+    document.getElementsByClassName('tasker-bottom-bar')[0].classList.remove('tasker-done-button-highlighted');
+    // remove the hover_highlight
+    hover_highlight.style.display = 'none';
+    
+    discardChanges();
+}
+
+
+// if (!params.get('edit') || params.get('edit') !== 'true') {
+// if(!editEnabled) {
+
+// } else {
+
+
+    // create a div that is fixed right 30px and right 30px and has the following svg inside it
+    let pointerSVG = `<svg class="do-not-edit" width="14" height="15" viewBox="0 0 18 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4.904 14.8882C4.95718 15.1271 5.08215 15.3441 5.26214 15.5099C5.44214 15.6758 5.66855 15.7826 5.91101 15.8162C6.15347 15.8497 6.40037 15.8083 6.61862 15.6974C6.83686 15.5866 7.016 15.4117 7.132 15.1962L9.222 12.1032L14.129 17.0102C14.2281 17.1093 14.3457 17.1879 14.4752 17.2415C14.6046 17.2951 14.7434 17.3227 14.8835 17.3227C15.0236 17.3227 15.1624 17.2951 15.2918 17.2415C15.4213 17.1879 15.5389 17.1093 15.638 17.0102L16.685 15.9632C16.7841 15.8641 16.8627 15.7465 16.9163 15.617C16.9699 15.4876 16.9975 15.3488 16.9975 15.2087C16.9975 15.0686 16.9699 14.9298 16.9163 14.8004C16.8627 14.6709 16.7841 14.5533 16.685 14.4542L11.778 9.5472L14.891 7.4572C15.1065 7.34112 15.2814 7.1619 15.3921 6.94359C15.5029 6.72527 15.5442 6.47831 15.5106 6.23584C15.477 5.99336 15.37 5.76697 15.204 5.58704C15.038 5.4071 14.821 5.28224 14.582 5.2292L1 1.3252L4.904 14.8882Z" stroke="#343947" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    `;
+
+    // create a div that is fixed right 30px and right 30px and has the following svg inside it
+    let bottomBar = document.createElement('div');
+    bottomBar.innerHTML = `
+    <div id="tasker-edit-button" class="tasker-edit-button do-not-edit" onclick="enableEdit();">
+        ${pointerSVG} <span class="do-not-edit">Edit Elements</span>
+    </div>
+    <div id="tasker-done-button" class="tasker-done-button do-not-edit" onclick="disableEdit();" style="display: none;">
+        <span class="do-not-edit">Done editing</span>
+    </div> 
+    `;
+
+    // add .do-not-edit
+    bottomBar.classList.add('do-not-edit');
+    bottomBar.classList.add('tasker-bottom-bar');
+    document.body.appendChild(bottomBar);
 
 
 
@@ -42,55 +88,132 @@ if (!params.get('edit') || params.get('edit') !== 'true') {
         const el = e.target;
 
 
-        // if the element is a child of .tasker_container return;
-        // if element == element_id return
-        if(el.closest('.tasker_container') || el.closest('.clr-picker') || el.closest('.do-not-edit') || el.id === element_id) {
+        if(!editEnabled) {
             return;
         }
 
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        if (el.id) {
-            
-            editElement(el.id);
 
+        // if the element is a child of .tasker_container return;
+        // if element == element_id return
+        if(el.closest('.tasker_container') || el.closest('.clr-picker') || el.closest('.do-not-edit')) {
+            return;
         }
+
+        // if(el.closest('#tasker-element-overlay')) {
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            e.preventDefault();
+
+            if(!el.id) {
+                // create a random id for the element
+                el.id = 'tasker-element-' + Math.random().toString(36).substring(2, 15);
+                // add the id to the element
+                el.id = el.id;
+            }
+                
+            editElement(el.id);
+    
+
+        // }
+
     }, true); // <-- enabling capture phase
 
 
-
+    // create a div that is absolute and has a size of 10,10 and is positioned at the top left of the screen and has a class of .hover-highlight
+    hover_highlight = document.createElement('div');
+    hover_highlight.className = 'hover-highlight';
+    hover_highlight.style.position = 'absolute';
+    hover_highlight.style.width = '1px';
+    hover_highlight.style.height = '1px';
+    hover_highlight.style.top = '0';
+    hover_highlight.style.left = '0';
+    // no pointer events
+    hover_highlight.style.pointerEvents = 'none';
+    // id should be #tasker-element-overlay
+    hover_highlight.id = 'tasker-element-overlay';
+    // z-index 100000
+    hover_highlight.style.zIndex = '1000';
+    // display none
+    hover_highlight.style.display = 'none';
+    document.body.appendChild(hover_highlight);
 
 
 
     document.body.addEventListener('mouseover', function (e) {
 
-
-        // if the element is a child of .tasker_container return;
-        if(e.target.closest('.tasker_container') || e.target.closest('.clr-picker')) {
+        if(!editEnabled) {
             return;
         }
 
-        if (e.target.id) {
+
+        // if the element is a child of .tasker_container return;
+        if(e.target.closest('.tasker_container') || e.target.closest('.clr-picker') || e.target.closest('.tasker-edit-button') || e.target.closest('.do-not-edit')) {
+            return;
+        }
+
+        if (e.target.id || e.target.className) {
             // if the element does not already have the class hover-highlight, add it
-            if(!e.target.classList.contains('hover-highlight')) {
+            /* if(!e.target.classList.contains('hover-highlight')) {
                 e.target.classList.add('hover-highlight');
-            }
+            } */
+
+            
+            // get the position of the element
+            const rect = e.target.getBoundingClientRect();
+            // set the position of the hover_highlight to the position of the element
+            // handle the scroll of the page
+            hover_highlight.style.top = rect.top + window.scrollY + 'px';
+            hover_highlight.style.left = rect.left + window.scrollX + 'px';
+            // set the width and height of the hover_highlight to the width and height of the element
+            hover_highlight.style.width = rect.width + 'px';
+            hover_highlight.style.height = rect.height + 'px';
+            // show the hover_highlight
+            hover_highlight.style.display = 'block';
+
+            // make the radius of the hover_highlight the same as the element
+            hover_highlight.style.borderRadius = e.target.style.borderRadius;
+
+            // make the cursor for the body a pointer
+            document.body.style.cursor = 'pointer';
+            
+            
         }
     }, true);
 
     document.body.addEventListener('mouseout', function (e) {
+
+        if(!editEnabled) {
+            return;
+        }
 
         // if the element is a child of .tasker_container return;
         if(e.target.closest('.tasker_container')) {
             return;
         }
 
-        if (e.target.id) {
-            e.target.classList.remove('hover-highlight');
+        if(element_id && e.target.id === element_id) {
+            return;
         }
+
+        // if (e.target.id) {
+            // e.target.classList.remove('hover-highlight');
+
+            // check if the mouse is within the target element bounds and take into consideration the scroll of the page
+
+            const rect = e.target.getBoundingClientRect();
+            if(e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                hover_highlight.style.display = 'block';
+            } else {
+                hover_highlight.style.display = 'none';
+                // make the cursor for the body a default
+                document.body.style.cursor = 'default';
+            }
+        // }
     }, true);
 
+
+
+    
 
 
 
@@ -98,6 +221,72 @@ if (!params.get('edit') || params.get('edit') !== 'true') {
 
     const style = document.createElement('style');
     style.textContent = `
+
+        #tasker-element-overlay {
+            cursor: pointer;
+        }
+
+        .tasker-edit-button {
+            font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+            font-size: 14px;
+            font-weight: 500;
+            color: #343947;
+            display: flex;
+            align-items: center;
+            flex-flow: row;
+            gap: 8px;
+            background: #dfdfdf;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+            /* width: 130px; */
+            /* text-align: center; */
+            border: 1px solid white;
+            box-sizing: content-box;
+        }
+
+        .tasker-done-button {
+            font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+            font-size: 14px;
+            font-weight: 500;
+            color: #ffffff;
+            gap: 8px;
+            background: #0049e5;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+            /* width: 130px; */
+            /* text-align: center; */
+            border: 1px solid #0049e5;
+            box-sizing: content-box;
+        }
+
+        .tasker-bottom-bar {
+            position: fixed;
+            left: 0px;
+            bottom: 0px;
+            z-index: 10000;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-flow: column;
+            align-items: center;
+            padding-bottom: 16px;
+            padding-top: 8px;
+            background: linear-gradient(to bottom, transparent, black);
+            z-index: 10000;
+        }
+
+        .tasker-done-button-highlighted {
+            background: linear-gradient(to bottom, transparent, #0049e5) !important;
+        }
+
+        .tasker-edit-button:hover {
+            background: #c7c7c7;
+        }
+
         .hover-highlight {
             position: relative;
             background-color: rgba(0,73,229, 0.3) !important;
@@ -194,10 +383,14 @@ if (!params.get('edit') || params.get('edit') !== 'true') {
             animation: 4s linear 0s infinite normal none running animation-tkatey;
             transition: border-radius 0.3s ease-in-out;
         }
+
+
+
+
     `;
     document.head.appendChild(style);
 
-}
+// }
 
 
 
@@ -249,9 +442,19 @@ function editElement(_element_id) {
         document.body.style.userSelect = '';
     });
 
+    // on mouse over move the hover_highlight to the position of the element
+    el.addEventListener('mouseover', function (e) {
+        hover_highlight.style.top = document.getElementById(_element_id).getBoundingClientRect().top + window.scrollY + 'px';
+        hover_highlight.style.left = document.getElementById(_element_id).getBoundingClientRect().left + window.scrollX + 'px';
+        hover_highlight.style.width = document.getElementById(_element_id).getBoundingClientRect().width + 'px';
+        hover_highlight.style.height = document.getElementById(_element_id).getBoundingClientRect().height + 'px';
+        hover_highlight.style.borderRadius = document.getElementById(_element_id).style.borderRadius;   
+        hover_highlight.style.display = 'block';
+    });
+
 
     // add class selected-highlight to the element
-    document.getElementById(_element_id).classList.add('selected-highlight');
+    // document.getElementById(_element_id).classList.add('selected-highlight');
 
 
     // save initial style of the element
@@ -421,6 +624,14 @@ function addEventListenersForInputs() {
     });
 
 
+    document.getElementById('tasker-ai-input').addEventListener('keyup', (e) => {
+        updateAIText(e.target.value);
+    });
+    document.getElementById('tasker-ai-input').addEventListener('change', (e) => {
+        updateAIText(e.target.value);
+    });
+
+
     // on change of the input, update the text of the element updateText(text) on change and on key up
     document.getElementById('container-text-inner-item-input').addEventListener('keyup', (e) => {
         updateText(e.target.value);
@@ -560,7 +771,7 @@ function updateImageHeight(value) {
 
 
 
-let initial_html_image = '';
+
 
 function updateImage(type) {
     console.log('FUNCTION updateImage', type);
@@ -647,7 +858,7 @@ function updateImage(type) {
 
 
 
-let uploadedImageFile = null;
+
 
 function triggerImageUpload() {
   // Create the input element if it doesn't already exist
@@ -712,7 +923,16 @@ function triggerImageUpload() {
 
 
 
+function updateAIText(text) {
+    console.log('FUNCTION updateAIText', text);
 
+    let ai_prompt = document.getElementById('tasker-ai-input').value;
+    if(!ai_prompt || ai_prompt === '') {
+        return;
+    }
+
+    document.querySelector('.container-approve-inner-approve').style.opacity = '1';
+}
 
 function updateText(text) {
     console.log('FUNCTION updateText', text);
@@ -886,7 +1106,7 @@ function injectHtml() {
         left: 10px;
         top: 10px;
         font-family: var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");
-        
+        z-index: 1000000;
     }
     .container-inner {
         display: flex;
@@ -931,7 +1151,7 @@ function injectHtml() {
     .container-inner-bottom-input-submit {
         position: absolute;
         right: 0px;
-        top: 5px;
+        bottom: 5px;
         padding: 4px 12px;
         cursor: pointer;
     }
@@ -1272,6 +1492,7 @@ function injectHtml() {
         border: 1px solid var(--gradientStroke, #2a2b2d);
         background: var(--Secondary-Background, #18181B);
         color: white;
+        padding: 2px;
     }
     
     .container-approve-inner-divider {
@@ -1290,6 +1511,16 @@ function injectHtml() {
         border-top-left-radius: 0px;
         border-bottom-left-radius: 0px;
         margin-left:-6px;
+    }
+
+
+    #tasker-ai-input {
+        width: 100%;
+        background: #18181b;
+        border-radius: 4px;
+        border: 1px solid var(--gradientStroke, #1F80FF);
+        padding: 8px;
+        color: white;
     }
 
     </style>
@@ -1335,7 +1566,7 @@ function injectHtml() {
                 </div>
                 <div class="container-inner-bottom">
                     <div class="container-inner-bottom-input">
-                        <input id="tasker-ai-input" type="text" placeholder="Ask for a change within this element"/>
+                        <textarea id="tasker-ai-input" placeholder="Ask Tasker AI for a change within this element" rows="4"></textarea>
                         <div class="container-inner-bottom-input-submit" onclick="applyChanges();">
                             <svg width="9" height="11" viewBox="0 0 9 11" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M9 5.49999L6.71789 9.3036C6.27201 10.0468 5.47855 10.5 4.62346 10.5L0 10.5L2.99993 5.50001L0 0.5L4.62346 0.5C5.47855 0.5 6.27201 0.953247 6.71789 1.69639L9 5.49999Z" fill="white"/>
@@ -1475,7 +1706,7 @@ function injectHtml() {
 
             <div class="container-approve">
                 <div class="container-approve-inner">
-                    <div onclick="selectSimilarElements();" class="container-approve-inner-discard">
+                    <div onclick="selectSimilarElements();" class="container-approve-inner-discard" style="display:none;">
                         <span>Select similar elements</span>
                     </div>
                     <div class="container-approve-inner-divider"></div>
@@ -1547,7 +1778,7 @@ function discardChanges() {
         document.querySelector('.tasker_container').remove();
 
         // remove class selected-highlight from the element
-        document.getElementById(element_id).classList.remove('selected-highlight');
+        // document.getElementById(element_id).classList.remove('selected-highlight');
         element_id = null;
 
         // clear similar_elements
@@ -1635,7 +1866,7 @@ function applyChanges() {
         document.querySelector('.tasker_container').remove();
 
         // // remove class selected-highlight from the element
-        document.getElementById(element_id).classList.remove('selected-highlight');
+        // document.getElementById(element_id).classList.remove('selected-highlight');
 
         // // remove class selected-highlight from similar_elements
         for(let i = 0; i < similar_elements.length; i++) {
@@ -1651,7 +1882,6 @@ function applyChanges() {
         similar_elements = [];
         element_id = null;
 
-        let image = {};
         // check if there is any image doms within the children of the element
         if(document.getElementById(_element_id).querySelector('#tasker-image-preview-replace')) {
 
@@ -1666,54 +1896,50 @@ function applyChanges() {
             if(!isNaN(height)) {
                 height = height + 'px';
             }
-
-            image = {
-                type: 'image',
-                value: document.getElementById(_element_id).querySelector('#tasker-image-preview-replace').src,
-                width: width,
-                height: height,
-                style: "object-fit: contain;"
-            }
         }
 
         const el = document.getElementById(_element_id);
-        const editData = {
-            taskUuid: window.TASK_UUID || '',
-            appId: window.APP_ID || 'unknown',
-            elementId: _element_id,
-            styleChanges: changes.length ? changes.join(', ') : null,
-            editRequest: ai_prompt && ai_prompt.trim() !== '' ? ai_prompt : changes.join(', '),
+
+        console.log('element html', el.outerHTML);
+
+        const styleChangesStr = changes.length ? changes.join(', ') : undefined;
+        const editRequestStr = (ai_prompt && ai_prompt.trim() !== '') ? ai_prompt : (styleChangesStr || '');
+
+        const requestBody = {
+            taskUUID: window.TASK_UUID || '',
+            elementHtml: el.outerHTML,
+            styleChanges: styleChangesStr,
+            editRequest: editRequestStr,
             pageUrl: window.location.href,
-            pagePath: window.location.pathname,
-            elementContext: {
-                tagName: el ? el.tagName : '',
-                className: el ? el.className : '',
-                textContent: el ? (el.textContent || '').substring(0, 100) : '',
-                parentElement: el && el.parentElement ? el.parentElement.tagName : ''
-            },
-            metadata: {
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                sessionId: 'edit-session-' + Date.now()
-            },
-            secureToken: window.EDIT_TOKEN || ''
+            pagePath: window.location.pathname
         };
 
-        if (Object.keys(image).length > 0 && image.type === 'image' && image.value) {
-            editData.image = image;
+        if (document.getElementById(_element_id).querySelector('#tasker-image-preview-replace')) {
+            try {
+                const replaceImg = document.getElementById(_element_id).querySelector('#tasker-image-preview-replace');
+                const widthVal = (document.getElementById('tasker-image-preview-width') && document.getElementById('tasker-image-preview-width').value) || '100%';
+                const heightVal = (document.getElementById('tasker-image-preview-height') && document.getElementById('tasker-image-preview-height').value) || '100%';
+                requestBody.image = {
+                    value: replaceImg ? replaceImg.src : '',
+                    width: String(widthVal),
+                    height: String(heightVal)
+                };
+            } catch (e) {
+                console.warn('applyChanges: failed to attach image payload', e);
+            }
         }
 
-        console.log('editData', editData);
+        console.log('editData', requestBody);
 
         const baseUrl = window.EDIT_BASE_URL || 'http://localhost:8080';
 
-        fetch(baseUrl + '/sandbox/get-by-task', {
+        fetch(baseUrl + '/websites/edit-element', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + (window.EDIT_TOKEN || '')
             },
-            body: JSON.stringify(editData)
+            body: JSON.stringify(requestBody)
         })
         .then(response => {
             if (!response.ok) {
