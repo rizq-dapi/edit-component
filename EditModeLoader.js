@@ -1911,7 +1911,8 @@ function applyChanges() {
             styleChanges: styleChangesStr,
             editRequest: editRequestStr,
             pageUrl: window.location.href,
-            pagePath: window.location.pathname
+            pagePath: window.location.pathname,
+            elementId: _element_id
         };
 
         if (document.getElementById(_element_id).querySelector('#tasker-image-preview-replace')) {
@@ -1974,13 +1975,15 @@ function deleteElement() {
 
     // Remove the primary element from the DOM
     const el = document.getElementById(element_id);
+    const elementHtmlSnapshot = el ? el.outerHTML : '';
+    const capturedElementId = element_id;
     if (el) {
         el.remove();
     }
 
     (function sendDelete() {
         try {
-            const _elementId = element_id;
+            const _elementId = capturedElementId;
             const TASK_UUID = window.TASK_UUID || '';
             const EDIT_TOKEN = window.EDIT_TOKEN || '';
             const EDIT_BASE_URL = window.EDIT_BASE_URL || 'http://localhost:8080';
@@ -1991,21 +1994,15 @@ function deleteElement() {
             }
 
             const editData = {
-                taskUuid: TASK_UUID,
-                appId: window.APP_ID || 'unknown',
-                elementId: _elementId,
-                deleteElement: true,
+                taskUUID: TASK_UUID,
+                elementHtml: elementHtmlSnapshot,
                 pageUrl: window.location.href,
                 pagePath: window.location.pathname,
-                metadata: {
-                    timestamp: new Date().toISOString(),
-                    userAgent: navigator.userAgent,
-                    sessionId: 'delete-session-' + Date.now()
-                },
-                secureToken: EDIT_TOKEN
+                elementId: _elementId,
+                deleteElement: true
             };
 
-            fetch(EDIT_BASE_URL + '/sandbox/get-by-task', {
+            fetch(EDIT_BASE_URL + '/websites/edit-element', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
