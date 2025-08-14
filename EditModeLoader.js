@@ -18,40 +18,6 @@ const params = new URLSearchParams(window.location.search);
 
 let editEnabled = false;
 
-// Auth token handling: listen for postMessage, persist to localStorage, and use for API calls
-const LOCAL_STORAGE_AUTH_TOKEN_KEY = 'TASKER_EDIT_TOKEN';
-
-function setAuthToken(token) {
-    try {
-        localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN_KEY, token);
-        // Keep legacy window var in sync for any existing consumers
-        window.EDIT_TOKEN = token;
-    } catch (e) {
-        console.warn('setAuthToken failed', e);
-        window.EDIT_TOKEN = token;
-    }
-}
-
-function getAuthToken() {
-    try {
-        return localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN_KEY) || window.EDIT_TOKEN || '';
-    } catch (e) {
-        return window.EDIT_TOKEN || '';
-    }
-}
-
-// Listen for `{ type: 'auth', token }` messages
-window.addEventListener('message', function(event) {
-    try {
-        const data = event && event.data;
-        if (data && typeof data === 'object' && data.type === 'auth' && data.token) {
-            setAuthToken(String(data.token));
-        }
-    } catch (e) {
-        console.warn('auth message handling failed', e);
-    }
-});
-
 function enableEdit() {
     editEnabled = true;
     document.getElementById('tasker-edit-button').style.display = 'none';
@@ -1972,7 +1938,7 @@ function applyChanges() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + getAuthToken()
+                'Authorization': 'Bearer ' + (window.EDIT_TOKEN || '')
             },
             body: JSON.stringify(requestBody)
         })
@@ -2019,10 +1985,10 @@ function deleteElement() {
         try {
             const _elementId = capturedElementId;
             const TASK_UUID = window.TASK_UUID || '';
-            const AUTH_TOKEN = getAuthToken();
+            const EDIT_TOKEN = window.EDIT_TOKEN || '';
             const EDIT_BASE_URL = window.EDIT_BASE_URL || 'http://localhost:8080';
 
-            if (!TASK_UUID || !_elementId || !AUTH_TOKEN) {
+            if (!TASK_UUID || !_elementId || !EDIT_TOKEN) {
                 console.warn('deleteElement: missing credentials or element id, skipping backend delete');
                 return;
             }
@@ -2040,7 +2006,7 @@ function deleteElement() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + AUTH_TOKEN
+                    'Authorization': 'Bearer ' + EDIT_TOKEN
                 },
                 body: JSON.stringify(editData)
             })
