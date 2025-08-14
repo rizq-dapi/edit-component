@@ -36,6 +36,9 @@ function disableEdit() {
     discardChanges();
 }
 
+function hideBottomBar() {
+    document.getElementsByClassName('tasker-bottom-bar')[0].style.display = 'none';
+}
 
 // if (!params.get('edit') || params.get('edit') !== 'true') {
 // if(!editEnabled) {
@@ -58,6 +61,13 @@ function disableEdit() {
     <div id="tasker-done-button" class="tasker-done-button do-not-edit" onclick="disableEdit();" style="display: none;">
         <span class="do-not-edit">Done editing</span>
     </div> 
+
+    <div class="tasker-close-button do-not-edit" onclick="hideBottomBar();">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
     `;
 
     // add .do-not-edit
@@ -148,8 +158,11 @@ function disableEdit() {
 
         // if the element is a child of .tasker_container return;
         if(e.target.closest('.tasker_container') || e.target.closest('.clr-picker') || e.target.closest('.tasker-edit-button') || e.target.closest('.do-not-edit')) {
+            // hide the hover_highlight
+            hover_highlight.style.display = 'none';
             return;
         }
+
 
         if (e.target.id || e.target.className) {
             // if the element does not already have the class hover-highlight, add it
@@ -224,6 +237,17 @@ function disableEdit() {
 
         #tasker-element-overlay {
             cursor: pointer;
+        }
+
+        .tasker-close-button {
+            position: absolute;
+            right: 16px;
+            top: 20px;
+            cursor: pointer;
+        }
+
+        .tasker-close-button:hover {
+            opacity: 0.5;
         }
 
         .tasker-edit-button {
@@ -1950,7 +1974,15 @@ function applyChanges() {
             }
             return response.json();
         })
-        .then(() => {
+        .then((data) => {
+            try {
+                if (data && data.historyUUID) {
+                    const targetWindow = (window.parent && window.parent !== window) ? window.parent : window;
+                    targetWindow.postMessage({ historyUUID: data.historyUUID }, '*');
+                }
+            } catch (e) {
+                console.warn('postMessage(historyUUID) failed', e);
+            }
             changesComplete(_element_id, _similar_elements);
         })
         .catch(err => {
@@ -2016,7 +2048,17 @@ function deleteElement() {
                 }
                 return res.json();
             })
-            .then(() => console.log('deleteElement: backend deletion recorded'))
+            .then((data) => {
+                try {
+                    if (data && data.historyUUID) {
+                        const targetWindow = (window.parent && window.parent !== window) ? window.parent : window;
+                        targetWindow.postMessage({ historyUUID: data.historyUUID }, '*');
+                    }
+                } catch (e) {
+                    console.warn('postMessage(historyUUID) failed', e);
+                }
+                console.log('deleteElement: backend deletion recorded');
+            })
             .catch(err => console.error('deleteElement: backend deletion failed', err));
         } catch (err) {
             console.error('deleteElement: unexpected error', err);
