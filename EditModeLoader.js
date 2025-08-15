@@ -1983,13 +1983,17 @@ function applyChanges() {
             } catch (e) {
                 console.warn('postMessage(historyUUID) failed', e);
             }
-            changesComplete(_element_id, _similar_elements);
+            // Keep highlighting active and poll for job status until completion/failure
+            if (data && data.jobUUID) {
+                pollJobStatus(data.jobUUID, _element_id, _similar_elements, baseUrl, (window.EDIT_TOKEN || ''));
+            } else {
+                // If no jobUUID is returned, complete immediately
+                changesComplete(_element_id, _similar_elements);
+            }
         })
         .catch(err => {
             console.error('Edit request failed:', err);
-            setTimeout(() => {
-                changesComplete(_element_id, _similar_elements);
-            }, 3000);
+            changesComplete(_element_id, _similar_elements);
         });
 
         changes = [];
@@ -2103,4 +2107,35 @@ function changesComplete(_element_id, _similar_elements) {
         _similar_elements[i].classList.remove('animating-highlight');
     }
 
+}
+
+// Poll job status until completed or failed; keep highlights while polling
+function pollJobStatus(jobUUID, _element_id, _similar_elements, baseUrl, authToken) {
+    const intervalMs = 5000;
+    const url = baseUrl + '/websites/job-status?jobUUID=' + encodeURIComponent(jobUUID);
+    const headers = { 'Authorization': 'Bearer ' + (authToken || '') };
+
+    function poll() {
+        fetch(url, { method: 'GET', headers })
+            .then(function(res) {
+                if (!res.ok) {
+                    return res.text().then(function(t) { throw new Error('HTTP ' + res.status + ': ' + t); });
+                }
+                return res.json();
+            })
+            .then(function(data) {
+                var status = data && data.status;
+                if (status === 'completed' || status === 'failed') {
+                    changesComplete(_element_id, _similar_elements);
+                } else {
+                    setTimeout(poll, intervalMs);
+                }
+            })
+            .catch(function() {
+                // On transient errors, continue polling
+                setTimeout(poll, intervalMs);
+            });
+    }
+
+    poll();
 }
