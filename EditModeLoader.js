@@ -426,7 +426,7 @@ function hideBottomBar() {
 
 function editElement(_element_id) {
 
-    console.log('FUNCTION editElement', _element_id);
+    // console.log('FUNCTION editElement', _element_id);
 
 
     discardChanges();
@@ -798,7 +798,7 @@ function updateImageHeight(value) {
 
 
 function updateImage(type) {
-    console.log('FUNCTION updateImage', type);
+    // console.log('FUNCTION updateImage', type);
 
     let image_url = document.getElementById('tasker-image-preview').src;
 
@@ -888,7 +888,7 @@ function triggerImageUpload() {
   // Create the input element if it doesn't already exist
   let input = document.getElementById('image-upload-input');
 
-  console.log('input', input);
+  // console.log('input', input);
 
   if (!input) {
     input = document.createElement('input');
@@ -901,7 +901,7 @@ function triggerImageUpload() {
     input.addEventListener('change', function (event) {
         const file = event.target.files[0];
 
-        console.log('file', file);
+        // console.log('file', file);
 
         if (file) {
             uploadedImageFile = file;
@@ -948,7 +948,7 @@ function triggerImageUpload() {
 
 
 function updateAIText(text) {
-    console.log('FUNCTION updateAIText', text);
+    // console.log('FUNCTION updateAIText', text);
 
     let ai_prompt = document.getElementById('tasker-ai-input').value;
     if(!ai_prompt || ai_prompt === '') {
@@ -959,14 +959,14 @@ function updateAIText(text) {
 }
 
 function updateText(text) {
-    console.log('FUNCTION updateText', text);
+    // console.log('FUNCTION updateText', text);
 
     document.getElementById(element_id).innerHTML = text;
     pushChange("text: " + text);
 }
 
 function updateTextAlighButtons(align) {
-    console.log('FUNCTION updateTextAlighButtons', align);
+    // console.log('FUNCTION updateTextAlighButtons', align);
 
     document.getElementById('element-align-center').classList.remove('container-style-inner-button-active');
     document.getElementById('element-align-left').classList.remove('container-style-inner-button-active');
@@ -983,7 +983,7 @@ function updateTextAlighButtons(align) {
 
 
 function updateStyle(style) {
-    console.log('FUNCTION updateStyle', style);
+    // console.log('FUNCTION updateStyle', style);
     
     // document.getElementById(element_id).style = style;
     // add the style without removing the existing styles
@@ -999,7 +999,7 @@ function updateStyle(style) {
 
 
 function pushChange(change) {
-    console.log('FUNCTION pushChange', change);
+    // console.log('FUNCTION pushChange', change);
     
     // the change is in this format: text-align: center;
     // check if the first part before : is available in changes array, if so replace it with the new change
@@ -1099,7 +1099,7 @@ function positionTaskerContainer(id) {
 
 function injectHtml() {
 
-    console.log('FUNCTION injectHtml');
+    // console.log('FUNCTION injectHtml');
 
 
 
@@ -1791,7 +1791,7 @@ function injectHtml() {
 
 function discardChanges() {
 
-    console.log('FUNCTION discardChanges');
+    // console.log('FUNCTION discardChanges');
 
     changes = [];
     if(document.getElementById(element_id)) {
@@ -1819,7 +1819,7 @@ function discardChanges() {
 
 
 function loadingChanges() {
-    console.log('FUNCTION loadingChanges');
+    // console.log('FUNCTION loadingChanges');
 
     // apply shimmer effect to the background of element_id
 
@@ -1842,15 +1842,15 @@ function loadingChanges() {
 
 
 function selectSimilarElements() {
-    console.log('FUNCTION selectSimilarElements');
+    // console.log('FUNCTION selectSimilarElements');
 
     // get class of element_id (without selected-highlight)
     let class_name = document.getElementById(element_id).className.replace('selected-highlight', '');
-    console.log('class_name', class_name);
+    // console.log('class_name', class_name);
 
     // get all elements with the same class
     let elements = document.getElementsByClassName(class_name);
-    console.log('elements', elements);
+    // console.log('elements', elements);
 
     // add class selected-highlight to all elements
     for(let i = 0; i < elements.length; i++) {
@@ -1874,7 +1874,7 @@ function selectSimilarElements() {
 
 function applyChanges() {
 
-    console.log('FUNCTION applyChanges');
+    // console.log('FUNCTION applyChanges');
 
     loadingChanges();
 
@@ -1924,7 +1924,7 @@ function applyChanges() {
 
         const el = document.getElementById(_element_id);
 
-        console.log('element html', el.outerHTML);
+        // console.log('element html', el.outerHTML);
 
         const styleChangesStr = changes.length ? changes.join(', ') : undefined;
         const editRequestStr = (ai_prompt && ai_prompt.trim() !== '') ? ai_prompt : (styleChangesStr || '');
@@ -1950,11 +1950,11 @@ function applyChanges() {
                     height: String(heightVal)
                 };
             } catch (e) {
-                console.warn('applyChanges: failed to attach image payload', e);
+                // console.warn('applyChanges: failed to attach image payload', e);
             }
         }
 
-        console.log('editData', requestBody);
+        // console.log('editData', requestBody);
 
         const baseUrl = window.EDIT_BASE_URL || 'http://localhost:8080';
 
@@ -1981,7 +1981,7 @@ function applyChanges() {
                     targetWindow.postMessage({ historyUUID: data.historyUUID }, '*');
                 }
             } catch (e) {
-                console.warn('postMessage(historyUUID) failed', e);
+                // console.warn('postMessage(historyUUID) failed', e);
             }
             // Keep highlighting active and poll for job status until completion/failure
             if (data && data.jobUUID) {
@@ -2005,7 +2005,7 @@ function applyChanges() {
 
 function deleteElement() {
     // Remove currently selected element and clean up overlays/state
-    console.log('FUNCTION deleteElement');
+    // console.log('FUNCTION deleteElement');
 
     if (!element_id) return;
 
@@ -2059,13 +2059,15 @@ function deleteElement() {
                         targetWindow.postMessage({ historyUUID: data.historyUUID }, '*');
                     }
                 } catch (e) {
-                    console.warn('postMessage(historyUUID) failed', e);
+                    // console.warn('postMessage(historyUUID) failed', e);
                 }
-                console.log('deleteElement: backend deletion recorded');
+                // console.log('deleteElement: backend deletion recorded');
             })
-            .catch(err => console.error('deleteElement: backend deletion failed', err));
+            .catch(err => {
+                // console.error('deleteElement: backend deletion failed', err);
+            });
         } catch (err) {
-            console.error('deleteElement: unexpected error', err);
+            // console.error('deleteElement: unexpected error', err);
         }
     })();
 
@@ -2087,7 +2089,7 @@ function deleteElement() {
 }
 
 function changesComplete(_element_id, _similar_elements) {
-    console.log('FUNCTION changesComplete');
+    // console.log('FUNCTION changesComplete');
 
     // remove shimmer effect from the element
     document.getElementById(_element_id).classList.remove('shimmer-wrapper');
