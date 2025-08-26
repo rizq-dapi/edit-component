@@ -2171,14 +2171,14 @@ function maybePostDailyLimitExceeded(err) {
             messageStr = err.message;
         }
 
-        var isDailyLimit = (messageStr && messageStr.toLowerCase().indexOf('daily limit exceeded') !== -1);
+        var isDailyLimit = (messageStr && messageStr.toLowerCase().indexOf('limit exceeded') !== -1);
         if (!isDailyLimit) return;
 
         var targetWindow = (window.parent && window.parent !== window) ? window.parent : window;
         targetWindow.postMessage({
             type: 'editError',
             error: 'DAILY_LIMIT_EXCEEDED',
-            message: messageStr || 'Website edit daily limit exceeded.',
+            message: messageStr || 'Website edit limit exceeded.',
             code: codeStr || 'BAD_REQUEST',
             status: status || 400
         }, '*');
