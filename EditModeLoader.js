@@ -2148,10 +2148,8 @@ function buildHttpError(statusCode, responseText) {
     error.httpStatus = statusCode;
     try {
         error.httpBody = responseText ? JSON.parse(responseText) : null;
-        console.log('buildHttpError: error.httpBody', error.httpBody);
     } catch (_e) {
         error.httpBody = responseText || null;
-        console.log('buildHttpError: error.httpBody', error.httpBody);
     }
     return error;
 }
@@ -2184,9 +2182,7 @@ function maybePostDailyLimitExceeded(err) {
             code: codeStr || 'BAD_REQUEST',
             status: status || 400
         }, '*');
-        console.log('maybePostDailyLimitExceeded: message posted');
     } catch (_e) {
-        console.log('maybePostDailyLimitExceeded: error', _e);
         // swallow
     }
 }
