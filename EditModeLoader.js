@@ -1968,9 +1968,7 @@ function applyChanges() {
         })
         .then(response => {
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error('HTTP ' + response.status + ': ' + text);
-                });
+                return response.text().then(function(text) { throw buildHttpError(response.status, text); });
             }
             return response.json();
         })
@@ -1993,6 +1991,7 @@ function applyChanges() {
         })
         .catch(err => {
             console.error('Edit request failed:', err);
+            maybePostDailyLimitExceeded(err);
             changesComplete(_element_id, _similar_elements);
         });
 
@@ -2048,7 +2047,7 @@ function deleteElement() {
             })
             .then(res => {
                 if (!res.ok) {
-                    return res.text().then(t => { throw new Error('HTTP ' + res.status + ': ' + t); });
+                    return res.text().then(function(t) { throw buildHttpError(res.status, t); });
                 }
                 return res.json();
             })
@@ -2065,6 +2064,7 @@ function deleteElement() {
             })
             .catch(err => {
                 // console.error('deleteElement: backend deletion failed', err);
+                maybePostDailyLimitExceeded(err);
             });
         } catch (err) {
             // console.error('deleteElement: unexpected error', err);
@@ -2140,4 +2140,49 @@ function pollJobStatus(jobUUID, _element_id, _similar_elements, baseUrl, authTok
     }
 
     poll();
+}
+
+// Build a structured error object for failed fetch responses
+function buildHttpError(statusCode, responseText) {
+    var error = new Error('HTTP ' + statusCode);
+    error.httpStatus = statusCode;
+    try {
+        error.httpBody = responseText ? JSON.parse(responseText) : null;
+    } catch (_e) {
+        error.httpBody = responseText || null;
+    }
+    return error;
+}
+
+// If the error indicates the daily edit limit was exceeded, post a message upward
+function maybePostDailyLimitExceeded(err) {
+    try {
+        var status = err && (err.httpStatus || err.status || null);
+        var body = err && (err.httpBody || null);
+        var messageStr = '';
+        var codeStr = '';
+
+        if (body && typeof body === 'object') {
+            messageStr = typeof body.message === 'string' ? body.message : '';
+            codeStr = typeof body.code === 'string' ? body.code : '';
+        } else if (typeof body === 'string') {
+            messageStr = body;
+        } else if (err && typeof err.message === 'string') {
+            messageStr = err.message;
+        }
+
+        var isDailyLimit = (messageStr && messageStr.toLowerCase().indexOf('daily limit exceeded') !== -1);
+        if (!isDailyLimit) return;
+
+        var targetWindow = (window.parent && window.parent !== window) ? window.parent : window;
+        targetWindow.postMessage({
+            type: 'editError',
+            error: 'DAILY_LIMIT_EXCEEDED',
+            message: messageStr || 'Website edit daily limit exceeded.',
+            code: codeStr || 'BAD_REQUEST',
+            status: status || 400
+        }, '*');
+    } catch (_e) {
+        // swallow
+    }
 }
